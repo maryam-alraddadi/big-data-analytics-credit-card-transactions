@@ -1,2 +1,19 @@
 __pycache__/
+**/__pycache__/
 *.py[cod]
+bigdatanalytics/
+
+# Data files
+data/raw/*.csv
+data/processed/
+
+# EDA generated figures
+notebooks/eda_figures/
+
+# Jupyter
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Spark / Java
+derby.log
+metastore_db/
