@@ -14,6 +14,10 @@ def create_spark_session(app_name: str = "CreditCardDataPreparation") -> SparkSe
     return (
         SparkSession.builder.appName(app_name)
         .master("local[*]")
+        .config("spark.driver.memory", "6g")
+        .config("spark.executor.memory", "6g")
+        .config("spark.memory.fraction", "0.8")
+        .config("spark.sql.shuffle.partitions", "50")
         # JDK 21+ compatibility guard for some local macOS setups.
         .config("spark.driver.extraJavaOptions", "-Djava.security.manager=allow")
         .config("spark.executor.extraJavaOptions", "-Djava.security.manager=allow")
