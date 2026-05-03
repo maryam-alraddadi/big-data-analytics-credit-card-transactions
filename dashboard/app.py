@@ -17,11 +17,11 @@ from dash import Input, Output, dcc, html
 
 warnings.filterwarnings("ignore")
 
-# ── PATHS ─────────────────────────────────────────────────────────────────────
+#  PATHS 
 ROOT = Path(__file__).resolve().parent.parent
 FEATURES_PARQUET = ROOT / "data" / "processed" / "features_parquet"
 
-# ── DATA LOADING ───────────────────────────────────────────────────────────────
+#  DATA LOADING 
 print("Loading features parquet …")
 df = pd.read_parquet(FEATURES_PARQUET)
 if "amount" not in df.columns and "amount_log1p" in df.columns:
@@ -33,7 +33,7 @@ df["tx_dow"]         = df["transaction_ts"].dt.dayofweek   # 0 = Monday
 df["year_month"]     = df["transaction_ts"].dt.to_period("M").astype(str)
 print(f"Loaded {len(df):,} rows · {len(df.columns)} columns")
 
-# ── PORTFOLIO KPIs ─────────────────────────────────────────────────────────────
+#  PORTFOLIO KPIs 
 TOTAL_TX          = len(df)
 FRAUD_TX          = int(df["is_fraud"].sum())
 FRAUD_RATE        = FRAUD_TX / TOTAL_TX * 100
@@ -62,7 +62,7 @@ ESTIMATED_MISSED  = FRAUD_AMT_TOTAL * (1 - GBT_RECALL)
 # False positives: legitimate tx wrongly blocked by the model
 ESTIMATED_FP      = int(FRAUD_TX * GBT_RECALL * (1 - GBT_PRECISION) / GBT_PRECISION)
 
-# ── AGGREGATIONS ───────────────────────────────────────────────────────────────
+#  AGGREGATIONS 
 cat_agg = (
     df.groupby("category", as_index=False)
     .agg(total=("is_fraud", "count"), fraud=("is_fraud", "sum"),
@@ -200,7 +200,7 @@ heatmap_pivot = (
 
 VEL_COL = "card_tx_count_1h" if "card_tx_count_1h" in df.columns else None
 
-# ── HARDCODED MODEL RESULTS (notebook 04 outputs) ─────────────────────────────
+#  HARDCODED MODEL RESULTS (notebook 04 outputs) 
 MODEL_METRICS = pd.DataFrame({
     "Model":    ["Logistic Regression", "Random Forest", "GBT"],
     "AUC-ROC":  [0.8908, 0.9930, 0.9966],
@@ -285,7 +285,7 @@ OPTIM_SUMMARY = pd.DataFrame({
 })
 OPTIM_SUMMARY["Speedup"] = OPTIM_SUMMARY["Baseline (s)"] / OPTIM_SUMMARY["Optimised (s)"]
 
-# ── COLOUR PALETTE (bank-grade: navy + alert red + safe green) ─────────────────
+#  COLOUR PALETTE (bank-grade: navy + alert red + safe green) 
 NAVY    = "#003087"
 CRIMSON = "#C41E3A"
 FOREST  = "#00875A"
@@ -294,7 +294,7 @@ STEEL   = "#4A90D9"
 SLATE   = "#6B7C93"
 CLUSTER_COLORS = [NAVY, CRIMSON, FOREST, AMBER, STEEL]
 
-# ── LAYOUT HELPERS ─────────────────────────────────────────────────────────────
+#  LAYOUT HELPERS 
 def _card(header: str, graph_id: str, height: int = 320) -> dbc.Card:
     return dbc.Card([
         dbc.CardHeader(html.Strong(header, className="small")),
@@ -317,11 +317,11 @@ def kpi_card(title: str, value: str, sub: str = "", color: str = "primary") -> d
     )
 
 
-# ── ALERT BANNER ──────────────────────────────────────────────────────────────
-FRAUD_ALERT_THRESHOLD = 1.0   # % — alert if fraud rate exceeds this
+#  ALERT BANNER 
+FRAUD_ALERT_THRESHOLD = 1.0   # % alert if fraud rate exceeds this
 alert_banner = dbc.Alert(
     [
-        html.Strong("FRAUD RATE ELEVATED — "),
+        html.Strong("FRAUD RATE ELEVATED "),
         f"Portfolio fraud rate is {FRAUD_RATE:.3f}%, above the {FRAUD_ALERT_THRESHOLD:.1f}% alert threshold. "
         f"Estimated exposure: ${FRAUD_AMT_TOTAL:,.0f}. Immediate review recommended.",
     ],
@@ -330,7 +330,7 @@ alert_banner = dbc.Alert(
     dismissable=True,
 )
 
-# ── KPI ROW ───────────────────────────────────────────────────────────────────
+#  KPI ROW 
 kpi_row = dbc.Row([
     kpi_card("Total Transactions",       f"{TOTAL_TX:,}",              color="primary"),
     kpi_card("Fraud Transactions",       f"{FRAUD_TX:,}",              color="danger"),
@@ -343,7 +343,7 @@ kpi_row = dbc.Row([
 ], className="g-2 mb-4")
 
 
-# ── TAB 1 — EXECUTIVE RISK OVERVIEW ──────────────────────────────────────────
+#  TAB 1 EXECUTIVE RISK OVERVIEW 
 tab_overview = dbc.Tab(label="Executive Overview", tab_id="tab-overview", children=[
     dbc.Row([
         dbc.Col(_card("Portfolio: Fraud vs Legitimate Transactions",       "pie-fraud",       280), md=3),
@@ -351,17 +351,17 @@ tab_overview = dbc.Tab(label="Executive Overview", tab_id="tab-overview", childr
     ], className="mb-3 g-3"),
     dbc.Row([
         dbc.Col(_card("Fraud Rate & Exposure by Transaction Amount Tier",  "bar-amount-bin",  300), md=6),
-        dbc.Col(_card("Transaction Amount Distribution — Fraud vs Legit",  "hist-amount",     300), md=6),
+        dbc.Col(_card("Transaction Amount Distribution Fraud vs Legit",  "hist-amount",     300), md=6),
     ], className="mb-3 g-3"),
     dbc.Row([
         dbc.Col(_card("Monthly Fraud Exposure ($) vs Transaction Volume",  "bar-monthly",     320), md=12),
     ], className="g-3"),
 ])
 
-# ── TAB 2 — FRAUD PATTERNS ───────────────────────────────────────────────────
+#  TAB 2 FRAUD PATTERNS 
 tab_temporal = dbc.Tab(label="Fraud Patterns", tab_id="tab-temporal", children=[
     dbc.Row([
-        dbc.Col(_card("Fraud Rate Heatmap — Hour of Day × Day of Week",   "heatmap-fraud",   340), md=8),
+        dbc.Col(_card("Fraud Rate Heatmap Hour of Day × Day of Week",   "heatmap-fraud",   340), md=8),
         dbc.Col(_card("Fraud Rate by Cardholder–Merchant Distance",        "bar-dist-fraud",  340), md=4),
     ], className="mb-3 g-3"),
     dbc.Row([
@@ -369,15 +369,15 @@ tab_temporal = dbc.Tab(label="Fraud Patterns", tab_id="tab-temporal", children=[
         dbc.Col(_card("Transaction Volume & Fraud Rate by Day of Week",    "bar-dow",         280), md=6),
     ], className="mb-3 g-3"),
     dbc.Row([
-        dbc.Col(_card("High-Risk States — Fraud Rate (min 100 tx)",        "bar-state-fraud", 300), md=6),
+        dbc.Col(_card("High-Risk States Fraud Rate (min 100 tx)",        "bar-state-fraud", 300), md=6),
         dbc.Col(_card("Fraud Rate & Exposure by Gender",                   "bar-gender",      300), md=6),
     ], className="g-3"),
 ])
 
-# ── TAB 3 — CUSTOMER PORTFOLIO RISK ──────────────────────────────────────────
+#  TAB 3 CUSTOMER PORTFOLIO RISK 
 tab_portfolio = dbc.Tab(label="Customer Portfolio Risk", tab_id="tab-portfolio", children=[
     dbc.Row([
-        dbc.Col(_card("K-Means Customer Segments — Silhouette (Best K=5)", "line-silhouette",     280), md=4),
+        dbc.Col(_card("K-Means Customer Segments Silhouette (Best K=5)", "line-silhouette",     280), md=4),
         dbc.Col(_card("Segment Risk Profile: Avg Spend vs Fraud Rate",     "bar-cluster-profiles",280), md=8),
     ], className="mb-3 g-3"),
     dbc.Row([
@@ -391,9 +391,9 @@ tab_portfolio = dbc.Tab(label="Customer Portfolio Risk", tab_id="tab-portfolio",
     ], className="g-3"),
 ])
 
-# ── TAB 4 — DETECTION & ROI ───────────────────────────────────────────────────
+#  TAB 4 DETECTION & ROI 
 _roi_card = dbc.Card([
-    dbc.CardHeader(html.Strong("GBT Model — Financial Impact", className="small")),
+    dbc.CardHeader(html.Strong("GBT Model Financial Impact", className="small")),
     dbc.CardBody([
         html.H5("Gradient Boosted Trees", className="fw-bold mb-1", style={"color": FOREST}),
         html.P("50 iterations · max depth 5 · class-weighted", className="text-muted small mb-2"),
@@ -417,34 +417,34 @@ _roi_card = dbc.Card([
 
 tab_models = dbc.Tab(label="Detection & ROI", tab_id="tab-models", children=[
     dbc.Row([
-        dbc.Col(_card("Model Comparison — AUC-ROC | AUC-PR | F1",         "bar-model-compare",  340), md=7),
+        dbc.Col(_card("Model Comparison AUC-ROC | AUC-PR | F1",         "bar-model-compare",  340), md=7),
         dbc.Col(_roi_card, md=5),
     ], className="mb-3 g-3"),
     dbc.Row([
         dbc.Col(_card("Fraud $ Recovery Waterfall (GBT Model)",            "waterfall-roi",      300), md=6),
-        dbc.Col(_card("Anomaly Detection — Flagged Transactions by Method","bar-anomaly",        300), md=6),
+        dbc.Col(_card("Anomaly Detection Flagged Transactions by Method","bar-anomaly",        300), md=6),
     ], className="mb-3 g-3"),
     dbc.Row([
-        dbc.Col(_card("Key Risk Signals — Fraud Detection Feature Importance",  "bar-fraud-fi", 300), md=6),
+        dbc.Col(_card("Key Risk Signals Fraud Detection Feature Importance",  "bar-fraud-fi", 300), md=6),
         dbc.Col(_card("Category Classifier Feature Importance",                 "bar-cat-fi",   300), md=6),
     ], className="g-3"),
 ])
 
-# ── TAB 5 — HIGH-RISK MONITORING ─────────────────────────────────────────────
+#  TAB 5 HIGH-RISK MONITORING 
 tab_monitoring = dbc.Tab(label="High-Risk Monitoring", tab_id="tab-monitoring", children=[
     dbc.Row([
-        dbc.Col(_card("Top 15 High-Risk Merchants — Fraud Rate & Exposure ($)", "bar-top-merch",    320), md=12),
+        dbc.Col(_card("Top 15 High-Risk Merchants Fraud Rate & Exposure ($)", "bar-top-merch",    320), md=12),
     ], className="mb-3 g-3"),
     dbc.Row([
         dbc.Col(_card("Merchant Fraud Rate Distribution",                        "hist-merch-fraud", 280), md=5),
         dbc.Col(_card("Fraud Rate & Exposure by Time of Day",                    "bar-tod-fraud",    280), md=7),
     ], className="mb-3 g-3"),
     dbc.Row([
-        dbc.Col(_card("Fraud Exposure ($) by State — Top 20",                   "bar-state-exposure",300), md=12),
+        dbc.Col(_card("Fraud Exposure ($) by State Top 20",                   "bar-state-exposure",300), md=12),
     ], className="g-3"),
 ])
 
-# ── TAB 6 — SYSTEM PERFORMANCE ───────────────────────────────────────────────
+#  TAB 6 SYSTEM PERFORMANCE 
 _spark_config_table = dbc.Card([
     dbc.CardHeader(html.Strong("Recommended Spark Configuration", className="small")),
     dbc.CardBody(
@@ -464,19 +464,19 @@ _spark_config_table = dbc.Card([
     ),
 ], className="shadow-sm h-100")
 
-tab_spark = dbc.Tab(label="System Performance", tab_id="tab-spark", children=[
-    dbc.Row([
-        dbc.Col(_card("End-to-End Speedup per Optimisation",  "bar-optim-summary", 320), md=8),
-        dbc.Col(_spark_config_table, md=4),
-    ], className="mb-3 g-3"),
-    dbc.Row([
-        dbc.Col(_card("Partition Tuning — Wall-Clock Time",   "bar-partition",     280), md=4),
-        dbc.Col(_card("Cache Strategy Comparison",            "bar-cache",         280), md=4),
-        dbc.Col(_card("Sort-Merge vs Broadcast Join",         "bar-join",          280), md=4),
-    ], className="g-3"),
-])
+# tab_spark = dbc.Tab(label="System Performance", tab_id="tab-spark", children=[
+#     dbc.Row([
+#         dbc.Col(_card("End-to-End Speedup per Optimisation",  "bar-optim-summary", 320), md=8),
+#         dbc.Col(_spark_config_table, md=4),
+#     ], className="mb-3 g-3"),
+#     dbc.Row([
+#         dbc.Col(_card("Partition Tuning Wall-Clock Time",   "bar-partition",     280), md=4),
+#         dbc.Col(_card("Cache Strategy Comparison",            "bar-cache",         280), md=4),
+#         dbc.Col(_card("Sort-Merge vs Broadcast Join",         "bar-join",          280), md=4),
+#     ], className="g-3"),
+# ])
 
-# ── APP LAYOUT ────────────────────────────────────────────────────────────────
+#  APP LAYOUT 
 app = dash.Dash(
     __name__,
     external_stylesheets=[dbc.themes.FLATLY],
@@ -510,12 +510,12 @@ app.layout = dbc.Container([
         tab_portfolio,
         tab_models,
         tab_monitoring,
-        tab_spark,
+        # tab_spark,
     ], id="tabs", active_tab="tab-overview", className="mb-4"),
 ], fluid=True, className="px-4 pb-5")
 
 
-# ── CALLBACKS — TAB 1: EXECUTIVE OVERVIEW ────────────────────────────────────
+#  CALLBACKS TAB 1: EXECUTIVE OVERVIEW 
 
 @app.callback(Output("pie-fraud", "figure"), Input("tabs", "active_tab"))
 def fig_pie_fraud(_):
@@ -653,7 +653,7 @@ def fig_monthly(_):
     return fig
 
 
-# ── CALLBACKS — TAB 2: FRAUD PATTERNS ────────────────────────────────────────
+#  CALLBACKS TAB 2: FRAUD PATTERNS 
 
 @app.callback(Output("heatmap-fraud", "figure"), Input("tabs", "active_tab"))
 def fig_heatmap_fraud(_):
@@ -800,7 +800,7 @@ def fig_gender(_):
     return fig
 
 
-# ── CALLBACKS — TAB 3: CUSTOMER PORTFOLIO ─────────────────────────────────────
+#  CALLBACKS TAB 3: CUSTOMER PORTFOLIO 
 
 @app.callback(Output("line-silhouette", "figure"), Input("tabs", "active_tab"))
 def fig_silhouette(_):
@@ -950,7 +950,7 @@ def fig_card_vel(_):
         hovertemplate="Tx/Card: %{x}<br>Cards: %{y}<extra></extra>",
     ))
     fig.add_vline(x=p99, line_dash="dash", line_color=CRIMSON,
-                  annotation_text=f"P99={p99:,} — {high_risk_cards} high-velocity cards",
+                  annotation_text=f"P99={p99:,} {high_risk_cards} high-velocity cards",
                   annotation_position="top right",
                   annotation_font=dict(color=CRIMSON, size=10))
     fig.update_layout(
@@ -960,7 +960,7 @@ def fig_card_vel(_):
     return fig
 
 
-# ── CALLBACKS — TAB 4: DETECTION & ROI ───────────────────────────────────────
+#  CALLBACKS TAB 4: DETECTION & ROI 
 
 @app.callback(Output("bar-model-compare", "figure"), Input("tabs", "active_tab"))
 def fig_model_compare(_):
@@ -1058,7 +1058,7 @@ def fig_cat_fi(_):
     return fig
 
 
-# ── CALLBACKS — TAB 5: HIGH-RISK MONITORING ──────────────────────────────────
+#  CALLBACKS TAB 5: HIGH-RISK MONITORING 
 
 @app.callback(Output("bar-top-merch", "figure"), Input("tabs", "active_tab"))
 def fig_top_merch(_):
@@ -1163,109 +1163,109 @@ def fig_state_exposure(_):
     return fig
 
 
-# ── CALLBACKS — TAB 6: SYSTEM PERFORMANCE ────────────────────────────────────
+# #  CALLBACKS TAB 6: SYSTEM PERFORMANCE 
 
-@app.callback(Output("bar-optim-summary", "figure"), Input("tabs", "active_tab"))
-def fig_optim_summary(_):
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=OPTIM_SUMMARY["Optimisation"], y=OPTIM_SUMMARY["Baseline (s)"],
-        name="Baseline", marker_color=CRIMSON, opacity=0.8,
-        hovertemplate="%{x}<br>Baseline: %{y:.2f}s<extra></extra>",
-    ))
-    fig.add_trace(go.Bar(
-        x=OPTIM_SUMMARY["Optimisation"], y=OPTIM_SUMMARY["Optimised (s)"],
-        name="Optimised", marker_color=FOREST, opacity=0.85,
-        hovertemplate="%{x}<br>Optimised: %{y:.2f}s<extra></extra>",
-    ))
-    fig.add_trace(go.Scatter(
-        x=OPTIM_SUMMARY["Optimisation"], y=OPTIM_SUMMARY["Speedup"],
-        name="Speedup", yaxis="y2", mode="lines+markers+text",
-        line=dict(color=AMBER, width=2.5),
-        marker=dict(size=9),
-        text=[f"{v:.1f}×" for v in OPTIM_SUMMARY["Speedup"]],
-        textposition="top center",
-        hovertemplate="%{x}: %{y:.2f}×<extra></extra>",
-    ))
-    fig.update_layout(
-        barmode="group",
-        margin=dict(t=10, b=10, l=10, r=60),
-        xaxis_title="", yaxis_title="Wall-Clock Time (s)",
-        yaxis2=dict(title="Speedup (×)", overlaying="y", side="right",
-                    color=AMBER, showgrid=False),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-    )
-    return fig
-
-
-@app.callback(Output("bar-partition", "figure"), Input("tabs", "active_tab"))
-def fig_partition(_):
-    colors = [CRIMSON if b else NAVY for b in PARTITION_BENCH["Best"]]
-    fig = go.Figure(go.Bar(
-        x=PARTITION_BENCH["Partitions"], y=PARTITION_BENCH["Time (s)"],
-        marker_color=colors, opacity=0.85,
-        text=[f"{v:.2f}s" for v in PARTITION_BENCH["Time (s)"]], textposition="outside",
-        hovertemplate="Partitions=%{x}: %{y:.2f}s<extra></extra>",
-    ))
-    fig.add_annotation(
-        x="64", y=PARTITION_BENCH[PARTITION_BENCH["Partitions"] == "64"]["Time (s)"].values[0] + 0.3,
-        text="Optimal", showarrow=True, arrowhead=2, arrowcolor=CRIMSON,
-        font=dict(color=CRIMSON, size=11),
-    )
-    fig.update_layout(
-        margin=dict(t=10, b=10, l=10, r=10),
-        xaxis_title="Shuffle Partitions", yaxis_title="Wall-Clock Time (s)",
-    )
-    return fig
+# @app.callback(Output("bar-optim-summary", "figure"), Input("tabs", "active_tab"))
+# def fig_optim_summary(_):
+#     fig = go.Figure()
+#     fig.add_trace(go.Bar(
+#         x=OPTIM_SUMMARY["Optimisation"], y=OPTIM_SUMMARY["Baseline (s)"],
+#         name="Baseline", marker_color=CRIMSON, opacity=0.8,
+#         hovertemplate="%{x}<br>Baseline: %{y:.2f}s<extra></extra>",
+#     ))
+#     fig.add_trace(go.Bar(
+#         x=OPTIM_SUMMARY["Optimisation"], y=OPTIM_SUMMARY["Optimised (s)"],
+#         name="Optimised", marker_color=FOREST, opacity=0.85,
+#         hovertemplate="%{x}<br>Optimised: %{y:.2f}s<extra></extra>",
+#     ))
+#     fig.add_trace(go.Scatter(
+#         x=OPTIM_SUMMARY["Optimisation"], y=OPTIM_SUMMARY["Speedup"],
+#         name="Speedup", yaxis="y2", mode="lines+markers+text",
+#         line=dict(color=AMBER, width=2.5),
+#         marker=dict(size=9),
+#         text=[f"{v:.1f}×" for v in OPTIM_SUMMARY["Speedup"]],
+#         textposition="top center",
+#         hovertemplate="%{x}: %{y:.2f}×<extra></extra>",
+#     ))
+#     fig.update_layout(
+#         barmode="group",
+#         margin=dict(t=10, b=10, l=10, r=60),
+#         xaxis_title="", yaxis_title="Wall-Clock Time (s)",
+#         yaxis2=dict(title="Speedup (×)", overlaying="y", side="right",
+#                     color=AMBER, showgrid=False),
+#         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+#     )
+#     return fig
 
 
-@app.callback(Output("bar-cache", "figure"), Input("tabs", "active_tab"))
-def fig_cache(_):
-    colors = [CRIMSON, FOREST, NAVY]
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=CACHE_BENCH["Strategy"], y=CACHE_BENCH["Time (s)"],
-        marker_color=colors, opacity=0.85,
-        text=[f"{v:.2f}s" for v in CACHE_BENCH["Time (s)"]], textposition="outside",
-        hovertemplate="%{x}: %{y:.2f}s<extra></extra>", showlegend=False,
-    ))
-    fig.add_trace(go.Scatter(
-        x=CACHE_BENCH["Strategy"], y=CACHE_BENCH["Speedup"],
-        name="Speedup", yaxis="y2", mode="markers",
-        marker=dict(color=AMBER, size=14, symbol="diamond"),
-        hovertemplate="%{x}: %{y:.1f}×<extra></extra>",
-    ))
-    fig.update_layout(
-        margin=dict(t=10, b=10, l=10, r=60),
-        xaxis_title="Cache Strategy", yaxis_title="Time — 2 Actions (s)",
-        yaxis2=dict(title="Speedup (×)", overlaying="y", side="right",
-                    color=AMBER, showgrid=False),
-        showlegend=False,
-    )
-    return fig
+# @app.callback(Output("bar-partition", "figure"), Input("tabs", "active_tab"))
+# def fig_partition(_):
+#     colors = [CRIMSON if b else NAVY for b in PARTITION_BENCH["Best"]]
+#     fig = go.Figure(go.Bar(
+#         x=PARTITION_BENCH["Partitions"], y=PARTITION_BENCH["Time (s)"],
+#         marker_color=colors, opacity=0.85,
+#         text=[f"{v:.2f}s" for v in PARTITION_BENCH["Time (s)"]], textposition="outside",
+#         hovertemplate="Partitions=%{x}: %{y:.2f}s<extra></extra>",
+#     ))
+#     fig.add_annotation(
+#         x="64", y=PARTITION_BENCH[PARTITION_BENCH["Partitions"] == "64"]["Time (s)"].values[0] + 0.3,
+#         text="Optimal", showarrow=True, arrowhead=2, arrowcolor=CRIMSON,
+#         font=dict(color=CRIMSON, size=11),
+#     )
+#     fig.update_layout(
+#         margin=dict(t=10, b=10, l=10, r=10),
+#         xaxis_title="Shuffle Partitions", yaxis_title="Wall-Clock Time (s)",
+#     )
+#     return fig
 
 
-@app.callback(Output("bar-join", "figure"), Input("tabs", "active_tab"))
-def fig_join(_):
-    speedup = JOIN_BENCH["Time (s)"].iloc[0] / JOIN_BENCH["Time (s)"].iloc[1]
-    fig = go.Figure(go.Bar(
-        x=JOIN_BENCH["Strategy"], y=JOIN_BENCH["Time (s)"],
-        marker_color=[CRIMSON, FOREST], opacity=0.85,
-        text=[f"{v:.2f}s" for v in JOIN_BENCH["Time (s)"]], textposition="outside",
-        hovertemplate="%{x}: %{y:.2f}s<extra></extra>",
-    ))
-    fig.add_annotation(
-        x=1, y=JOIN_BENCH["Time (s)"].iloc[1] + 0.4,
-        text=f"{speedup:.1f}× faster",
-        showarrow=False, font=dict(color=FOREST, size=12, weight="bold"),
-    )
-    fig.update_layout(
-        margin=dict(t=10, b=10, l=10, r=10),
-        xaxis_title="Join Strategy", yaxis_title="Wall-Clock Time (s)",
-    )
-    return fig
+# @app.callback(Output("bar-cache", "figure"), Input("tabs", "active_tab"))
+# def fig_cache(_):
+#     colors = [CRIMSON, FOREST, NAVY]
+#     fig = go.Figure()
+#     fig.add_trace(go.Bar(
+#         x=CACHE_BENCH["Strategy"], y=CACHE_BENCH["Time (s)"],
+#         marker_color=colors, opacity=0.85,
+#         text=[f"{v:.2f}s" for v in CACHE_BENCH["Time (s)"]], textposition="outside",
+#         hovertemplate="%{x}: %{y:.2f}s<extra></extra>", showlegend=False,
+#     ))
+#     fig.add_trace(go.Scatter(
+#         x=CACHE_BENCH["Strategy"], y=CACHE_BENCH["Speedup"],
+#         name="Speedup", yaxis="y2", mode="markers",
+#         marker=dict(color=AMBER, size=14, symbol="diamond"),
+#         hovertemplate="%{x}: %{y:.1f}×<extra></extra>",
+#     ))
+#     fig.update_layout(
+#         margin=dict(t=10, b=10, l=10, r=60),
+#         xaxis_title="Cache Strategy", yaxis_title="Time 2 Actions (s)",
+#         yaxis2=dict(title="Speedup (×)", overlaying="y", side="right",
+#                     color=AMBER, showgrid=False),
+#         showlegend=False,
+#     )
+#     return fig
 
 
-# ── RUN ───────────────────────────────────────────────────────────────────────
+# @app.callback(Output("bar-join", "figure"), Input("tabs", "active_tab"))
+# def fig_join(_):
+#     speedup = JOIN_BENCH["Time (s)"].iloc[0] / JOIN_BENCH["Time (s)"].iloc[1]
+#     fig = go.Figure(go.Bar(
+#         x=JOIN_BENCH["Strategy"], y=JOIN_BENCH["Time (s)"],
+#         marker_color=[CRIMSON, FOREST], opacity=0.85,
+#         text=[f"{v:.2f}s" for v in JOIN_BENCH["Time (s)"]], textposition="outside",
+#         hovertemplate="%{x}: %{y:.2f}s<extra></extra>",
+#     ))
+#     fig.add_annotation(
+#         x=1, y=JOIN_BENCH["Time (s)"].iloc[1] + 0.4,
+#         text=f"{speedup:.1f}× faster",
+#         showarrow=False, font=dict(color=FOREST, size=12, weight="bold"),
+#     )
+#     fig.update_layout(
+#         margin=dict(t=10, b=10, l=10, r=10),
+#         xaxis_title="Join Strategy", yaxis_title="Wall-Clock Time (s)",
+#     )
+#     return fig
+
+
+#  RUN 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)
